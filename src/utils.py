@@ -1,6 +1,7 @@
 import visdom
 import torch
 import torch.nn
+import numpy as np
 #python -m visdom.server
 
 
@@ -59,4 +60,15 @@ class Visualizer(object):
         return ret
 
 
-        
+def process_feat(feat, length):
+    new_feat = np.zeros((length, feat.shape[1])).astype(np.float32)
+    
+    r = np.linspace(0, len(feat), length+1, dtype=np.int64)
+    
+    for i in range(length):
+        if r[i] != r[i+1]:
+            new_feat[i, :] = np.mean(feat[r[i]:r[i+1], :], axis=0)
+        else:
+            new_feat[i, :] = feat[r[i], :]
+    
+    return new_feat
