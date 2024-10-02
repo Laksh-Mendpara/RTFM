@@ -1,6 +1,9 @@
 import numpy as np
+import torch
 import os
 
+
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 BATCH_SIZE = 32
 NUM_WORKERS = 4
 LEARNING_RATE = 0.001
