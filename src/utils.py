@@ -2,6 +2,7 @@ import visdom
 import torch
 import torch.nn
 import numpy as np
+import config
 
     
 def minmax_norm(act_map, min_val=None, max_val=None):
@@ -62,8 +63,20 @@ def modelsize(model, input, type_size=4):
           .format(model._get_name(), total_nums * type_size*2 / 1000 / 1000))
 
 
-def save_best_record(test_info, file_path):
-    fo = open(file_path, "w")
-    fo.write("epoch: {}\n".format(test_info["epoch"][-1]))
-    fo.write(str(test_info["test_AUC"][-1]))
-    fo.close()
+def save_checkpoint(model, optimizer, filename="checkpoints/my_checkpoint.pth.tar"):
+    # print("=> Saving checkpoint")
+    checkpoint = {
+        "state_dict": model.state_dict(),
+        "optimizer": optimizer.state_dict(),
+    }
+    torch.save(checkpoint, filename)
+
+
+def load_checkpoint(checkpoint_file, model, optimizer, lr):
+    print("=> Loading checkpoint")
+    checkpoint = torch.load(checkpoint_file, map_location=config.DEVICE)
+    model.load_state_dict(checkpoint["state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer"])
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
