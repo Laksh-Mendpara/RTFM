@@ -1,6 +1,17 @@
 import numpy as np
 import os
 
+BATCH_SIZE = 32
+NUM_WORKERS = 4
+LEARNING_RATE = 0.001
+SAVE_MODEL = False
+LOAD_MODEL = True
+DATASET = "shanghai"
+PLOT_FREQ = 10
+MAX_STEP = 15000
+FEATURE_EXTRACTOR = "i3d"
+FEATURE_SIZE = 2048
+
 class Config(object) :
     def __init__(self, args) :
         self.lr = eval(args.lr)
