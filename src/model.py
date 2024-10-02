@@ -275,7 +275,9 @@ class Model(nn.Module):
         feat_sel_abn = total_select_abn_feature
         feat_sel_norm = total_select_norm_feature
 
-        return score_abnormal, score_normal, feat_select_abn, feat_sel_norm, feat_select_abn, feat_select_abn, x, feat_select_abn, feat_select_abn, feat_mag
+        # return score_abnormal, score_normal, feat_select_abn, feat_select_norm feat_select_abn, feat_select_abn, x, feat_select_abn, feat_select_abn, feat_mag
+        return score_abnormal, score_normal, feat_select_abn, feat_sel_norm, feat_sel_abn, \
+        feat_sel_abn, x, feat_sel_abn, feat_sel_abn, feat_mag
 
 
 if __name__ == "__main__":
@@ -284,9 +286,9 @@ if __name__ == "__main__":
     score_abnormal, score_normal, \
         feat_select_abn, feat_sel_norm, feat_select_abn, \
             feat_select_abn, x, feat_select_abn, feat_select_abn, feat_mag = model(input)
-    print(score_abnormal, score_normal)
-    # agg = Aggregate(2048)
-    # out = input
-    # bs, ncrops, t, f = out.size()
-    # out = out.view(-1, t, f)
-    # out = agg(out)
+    # print(score_abnormal.shape)
+    # print(score_normal.shape)
+    # print(feat_select_abn.shape)
+    # print(feat_sel_norm.shape)
+    # print(x.shape)
+    # print(feat_mag.shape)
