@@ -56,11 +56,11 @@ class ShanghaiDataset(Dataset):
     
 
 if __name__ == "__main__":
-    shanghai_test_dataset = ShanghaiDataset(train=False, transform=None)
-    shanghai_test_dataloader = DataLoader(shanghai_test_dataset, batch_size=1, shuffle=False, pin_memory=False, num_workers=0)
+    shanghai_test_dataset = ShanghaiDataset(train=True, transform=None)
+    shanghai_test_dataloader = DataLoader(shanghai_test_dataset, batch_size=32, shuffle=False, pin_memory=False, num_workers=0)
     c = 0
 
-    for feature in shanghai_test_dataloader:
+    for feature, _ in shanghai_test_dataloader:
         print(feature.shape)
         # break
         c+=1

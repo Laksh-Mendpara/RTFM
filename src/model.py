@@ -31,6 +31,7 @@ class _NonLocalBlockND(nn.Module) :
                 self.inter_channels = 1 
 
 
+
         if dimension == 3 :
             conv_nd = nn.Conv3d
             max_pool_layer = nn.MaxPool3d(kernel_size = (1,2,2))
@@ -49,10 +50,14 @@ class _NonLocalBlockND(nn.Module) :
         else :
             print("Wrong dimensions being passed in NonLocalBlockND")
 
+        self.g = conv_nd(in_channels=self.in_channels, out_channels=self.inter_channels,
+                         kernel_size=1, stride=1, padding=0)
         
 
         if bn_layer :
-            self.W  = nn.Sequential(conv_nd(in_channels = self.inter_channels, out_channels = self.inter_channels, kernel_size = 1, stride = 1, padding = 0), bn(self.in_channels))
+            self.W  = nn.Sequential(conv_nd(in_channels = self.inter_channels, out_channels = self.in_channels, 
+                                            kernel_size = 1, stride = 1, padding = 0), 
+                                    bn(self.in_channels))
 
             nn.init.constant_(self.W[1].weight, 0)
             nn.init.constant_(self.W[1].bias, 0)
@@ -78,12 +83,12 @@ class _NonLocalBlockND(nn.Module) :
         theta_x=self.g(x).view(batch_size,self.inter_channels,-1)
         theta_x=theta_x.permute(0,2,1)
         phi_x=self.phi(x).view(batch_size,self.inter_channels,-1)
-        f=torch.matmul(0,2,1)
-        phi_x=self.phi(x).view(batch_size,self.interchannels,-1)
+        # f=torch.matmul(0,2,1)
+        # phi_x=self.phi(x).view(batch_size,self.interchannels,-1)
         f=torch.matmul(theta_x,phi_x)
         N=f.size(-1)
         f_div_C=f/N
-        y=torch.matmul(theta_x,phi_x)
+        y=torch.matmul(f_div_C, g_x)
         y=y.permute(0,2,1).contiguous()
         y=y.view(batch_size,self.inter_channels,*x.size()[2:])
         W_y=self.W(y)
@@ -104,27 +109,27 @@ class Aggregate(nn.Module):
         self.len_feature = len_feature
 
         self.conv_1 = nn.Sequential(
-            nn.Conv1d(in_channels=len_feature, out_channels=512, kernel_size=3, stride=1, dilation=2, padding=2),
+            nn.Conv1d(in_channels=len_feature, out_channels=512, kernel_size=3, stride=1, dilation=1, padding=1),
             nn.ReLU(),
             bn(512)
         )
 
         self.conv_2 = nn.Sequential(
-            nn.Conv1d(in_channels=512, out_channels=512, kernel_size=3, stride=1, padding=4),
+            nn.Conv1d(in_channels=len_feature, out_channels=512, kernel_size=3, stride=1, dilation=2, padding=2),
             nn.ReLU(),
             bn(512)
         )
 
         self.conv_3 = nn.Sequential(
-            nn.Conv1d(in_channels=512, out_channels=512, kernel_size=3, stride=1, dilation=4, padding=4),
+            nn.Conv1d(in_channels=len_feature, out_channels=512, kernel_size=3, stride=1, dilation=4, padding=4),
             nn.ReLU(),
             bn(512)
         )
 
         self.conv_4 = nn.Sequential(
-            nn.Conv1d(in_channels=512, out_channels=512, kernel_size=3, stride=1, dilation=4, padding=4),
+            nn.Conv1d(in_channels=2048, out_channels=512, kernel_size=1, stride=1, padding=0, bias=False),
             nn.ReLU(),
-            bn(512)
+            # bn(512)
         )
 
         self.conv_5 = nn.Sequential(
@@ -136,13 +141,22 @@ class Aggregate(nn.Module):
         self.non_local = NONLocalBlock1D(512, sub_sample=False, bn_layer=True)
 
     def forward(self, x):
-        x = self.conv_1(x)
-        x = self.conv_2(x)
-        x = self.conv_3(x)
+        x = x.permute(0, 2, 1)
+        residual = x
+
+        x1 = self.conv_1(x)
+        x2 = self.conv_2(x)
+
+        x3 = self.conv_3(x)
+        x_d = torch.cat((x1, x2, x3), dim=1)
+
         x = self.conv_4(x)
-        x = self.conv_5(x)
         x = self.non_local(x)
-        return x
+        x = torch.cat((x_d, x), dim=1)
+        x = self.conv_5(x)
+
+        x = x + residual
+        return x.permute(0, 2, 1)
 
 class Model(nn.Module):
 
@@ -152,7 +166,6 @@ class Model(nn.Module):
 
         self.batch_size = batch_size
 
-        self.batch_size = batch_size
         self.num_segments = 32
 
         self.k_abn = self.num_segments // 10
@@ -222,7 +235,7 @@ class Model(nn.Module):
         afea_mag_drop = afea_mag * select_idx
 
         idx_abn = torch.topk(afea_mag_drop, k_abn, dim = 1)[1]
-        idx_abn_feat = idx_abn.unsqueeze(2).expand([-1, -1, abnormal_features.shapes[2]])
+        idx_abn_feat = idx_abn.unsqueeze(2).expand([-1, -1, abnormal_features.shape[2]])
         
         abnormal_features = abnormal_features.view(n_size, ncrops, t, f)
         abnormal_features = abnormal_features.permute(1, 0, 2,3)
@@ -266,9 +279,14 @@ class Model(nn.Module):
 
 
 if __name__ == "__main__":
-    model = Model(32, 2048)
+    model = Model(2048, 32)
     input = torch.rand([64, 10, 32, 2048])
     score_abnormal, score_normal, \
         feat_select_abn, feat_sel_norm, feat_select_abn, \
             feat_select_abn, x, feat_select_abn, feat_select_abn, feat_mag = model(input)
-    
+    print(score_abnormal, score_normal)
+    # agg = Aggregate(2048)
+    # out = input
+    # bs, ncrops, t, f = out.size()
+    # out = out.view(-1, t, f)
+    # out = agg(out)
