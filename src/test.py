@@ -44,15 +44,16 @@ def test(dataloader, model):
         fpr, tpr, threshold = roc_curve(list(gt), pred)
 
         #saving, printing and plotting stuff
-        np.save('fpr.npy', fpr)
-        np.save('tpr.npy', tpr)
+        np.save(config.RESULT_DIR+'fpr.npy', fpr)
+        np.save(config.RESULT_DIR+'tpr.npy', tpr)
         rec_auc = auc(fpr, tpr)
-        print('auc : ' + str(rec_auc))
+        # print('auc : ' + str(rec_auc))
 
         precision, recall, th = precision_recall_curve(list(gt), pred)
         pr_auc = auc(recall, precision)
-        np.save('precision.npy', precision)
-        np.save('recall.npy', recall)
+        np.save(config.RESULT_DIR+'precision.npy', precision)
+        np.save(config.RESULT_DIR+'recall.npy', recall)
+        
         return rec_auc
 
 
@@ -60,7 +61,6 @@ if __name__ == "__main__":
     from model import Model
     from dataset import ShanghaiDataset
     from torch.utils.data import DataLoader
-    import torch.optim as optim
 
     test_data = ShanghaiDataset(train=False)
 

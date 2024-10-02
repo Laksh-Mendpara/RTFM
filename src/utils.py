@@ -80,3 +80,9 @@ def load_checkpoint(checkpoint_file, model, optimizer, lr):
 
     for param_group in optimizer.param_groups:
         param_group["lr"] = lr
+
+def save_best_record(test_info, file_path):
+    fo = open(file_path, "w")
+    fo.write("epoch: {}\n".format(test_info[-1]))
+    fo.write(str(test_info[-1]))
+    fo.close()

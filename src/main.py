@@ -16,6 +16,11 @@ def main(nloader, aloader, testloader, model, optimizer, test_acc):
     auc = test(testloader, model)
     test_acc.append(auc)
 
+    best_auc = -1
+
+    with open(config.RESULT_DIR+'accuray.txt', 'a') as file:
+        file.write(f"\nStep: 0, rec_acc: {auc}\n")
+
     for step in tqdm(
         range(1, config.MAX_STEP),total=config.MAX_STEP, dynamic_ncols=True
     ):
@@ -30,7 +35,11 @@ def main(nloader, aloader, testloader, model, optimizer, test_acc):
         if step%5==0:
             auc = test(testloader, model)
             test_acc.append(auc)
-            print(auc)
+            with open(config.RESULT_DIR+'accuray.txt', 'a') as file:
+                file.write(f"Step: {step}, rec_acc: {auc}\n")
+            if auc > best_auc:
+                best_auc = auc
+                save_best_record(test_acc, os.path.join(config.RESULT_DIR, '{}-step-AUC.txt'.format(step)))
 
         if step%10==0 and config.SAVE_MODEL:
             save_checkpoint(model, optimizer, config.CHECKPOINT_DIR)
