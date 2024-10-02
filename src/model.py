@@ -92,6 +92,57 @@ class _NonLocalBlockND(nn.Module) :
             return z, f_div_C
         return z
     
+class NONLocalBlock1D(_NonLocalBlockND):
+    def __init__(self, in_channels, inter_channels=None, sub_sample=True, bn_layer=True):
+        super(NONLocalBlock1D, self).__init__(in_channels, inter_channels=inter_channels, dimension=1, sub_sample=sub_sample, bn_layer=bn_layer)
+
+
+class Aggregate(nn.Module):
+    def __init__(self, len_feature):
+        super(Aggregate, self).__init__()
+        bn = nn.BatchNorm1d
+        self.len_feature = len_feature
+
+        self.conv_1 = nn.Sequential(
+            nn.Conv1d(in_channels=len_feature, out_channels=512, kernel_size=3, stride=1, dilation=2, padding=2),
+            nn.ReLU(),
+            bn(512)
+        )
+
+        self.conv_2 = nn.Sequential(
+            nn.Conv1d(in_channels=512, out_channels=512, kernel_size=3, stride=1, padding=4),
+            nn.ReLU(),
+            bn(512)
+        )
+
+        self.conv_3 = nn.Sequential(
+            nn.Conv1d(in_channels=512, out_channels=512, kernel_size=3, stride=1, dilation=4, padding=4),
+            nn.ReLU(),
+            bn(512)
+        )
+
+        self.conv_4 = nn.Sequential(
+            nn.Conv1d(in_channels=512, out_channels=512, kernel_size=3, stride=1, dilation=4, padding=4),
+            nn.ReLU(),
+            bn(512)
+        )
+
+        self.conv_5 = nn.Sequential(
+            nn.Conv1d(in_channels=2048, out_channels=2048, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.ReLU(),
+            nn.BatchNorm1d(2048),
+        )
+
+        self.non_local = NONLocalBlock1D(512, sub_sample=False, bn_layer=True)
+
+    def forward(self, x):
+        x = self.conv_1(x)
+        x = self.conv_2(x)
+        x = self.conv_3(x)
+        x = self.conv_4(x)
+        x = self.conv_5(x)
+        x = self.non_local(x)
+        return x
 
 class Model(nn.Module):
 
