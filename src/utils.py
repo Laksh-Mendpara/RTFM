@@ -2,50 +2,8 @@ import visdom
 import torch
 import torch.nn
 import numpy as np
-#python -m visdom.server
+import config
 
-
-class Visualizer(object):
-    def __init__(self,env="default",**kwargs): 
-        #whatever extra keywords added in the init method of the visdom is passed from here
-        self.vis=visdom.Visdom(env=env,**kwargs)
-        self.index={}
-        
-    def plot_lines(self,name,y,**kwargs):
-        #x=self.index.get(name, 1.00)
-        x = self.index.get(name, 0)
-        self.vis.line(Y=np.array([y]), X=np.array([x]),
-                      win=str(name), #displays a name on image
-                      opts=dict(title=name), 
-                      update=None if x==0 else 'append',
-                      **kwargs
-                      )
-        self.index[name]=x+1
-        
-    def disp_image(self, name, img):
-        self.vis.image(img=img, win=name, opts=dict(title=name))
-        
-    def lines(self, name, line, X=None):
-        if X is None: #if there is no x axis specified then it takes index as x
-            self.vis.line(Y=line, win=name)
-        else:
-            self.vis.line(X=X, Y=line, win=name)
-            
-    def scatter(self, name, data):
-        self.vis.scatter(X=data, win=name)
-      
-    #extra faeture added  
-    def plot_confusion_matrix(self, name, cm, labels):
-        self.vis.heatmap(X=cm, win=name, opts=dict(
-        title=name,
-        rownames=labels,
-        columnnames=labels
-    ))
-    
-    def save_visualizations(self, path):
-        self.vis.save([path])
-        #yaha path add karna hai
-        
     
 def minmax_norm(act_map, min_val=None, max_val=None):
         if min_val is None or max_val is None: #if min/max value is not specified then it finds it, else it is skipped directly to delta part...
@@ -105,8 +63,26 @@ def modelsize(model, input, type_size=4):
           .format(model._get_name(), total_nums * type_size*2 / 1000 / 1000))
 
 
+def save_checkpoint(model, optimizer, filename="checkpoints/my_checkpoint.pth.tar"):
+    # print("=> Saving checkpoint")
+    checkpoint = {
+        "state_dict": model.state_dict(),
+        "optimizer": optimizer.state_dict(),
+    }
+    torch.save(checkpoint, filename)
+
+
+def load_checkpoint(checkpoint_file, model, optimizer, lr):
+    print("=> Loading checkpoint")
+    checkpoint = torch.load(checkpoint_file, map_location=config.DEVICE)
+    model.load_state_dict(checkpoint["state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer"])
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
 def save_best_record(test_info, file_path):
     fo = open(file_path, "w")
-    fo.write("epoch: {}\n".format(test_info["epoch"][-1]))
-    fo.write(str(test_info["test_AUC"][-1]))
+    fo.write("epoch: {}\n".format(test_info[-1]))
+    fo.write(str(test_info[-1]))
     fo.close()
