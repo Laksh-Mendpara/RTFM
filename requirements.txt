@@ -1,0 +1,7 @@
+matplotlib==3.9.2
+numpy==2.1.1
+scikit_learn==1.5.2
+scipy==1.14.1
+torch==2.4.0+cu118
+tqdm==4.66.4
+visdom==0.2.4
